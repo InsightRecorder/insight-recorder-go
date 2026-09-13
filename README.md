@@ -158,6 +158,26 @@ OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://insightrecorder.example.com/api/metr
 OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer crk_…
 ```
 
+### Shipping logs over gRPC (high volume)
+
+Logs can also travel over **OTLP/gRPC** on `:4317` — the same endpoint that takes
+metrics and traces. Binary protobuf over HTTP/2 gives higher throughput than this
+SDK's HTTP shipper under heavy volume, so point your OpenTelemetry **logs** exporter
+(gRPC) at the deployment:
+
+```sh
+OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://insightrecorder.example.com:4317
+OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer crk_…   # needs logs:write
+```
+
+For gRPC the endpoint is used **as-is** — no `/v1/logs` path is appended (over HTTP
+this server serves logs at `/api/logs/otlp`, not `/v1/logs`, which is why the HTTP
+exporter's path-append does not fit). Same tenant scoping and server-side PII
+redaction as every other ingest path. Note: gRPC does not by itself prevent data
+loss — that is what this SDK's bounded buffer and retries are for; a durable broker
+in front is on the roadmap.
+
+
 The one trap: `OTEL_EXPORTER_OTLP_ENDPOINT` has the signal path **appended** by
 the SDK (`…/v1/traces`), which InsightRecorder does not serve — you get a 404 and
 no telemetry, with nothing obviously wrong in the application. The per-signal
