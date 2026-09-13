@@ -1,0 +1,17 @@
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+*.test
+*.out
+coverage.txt
+/bin/
+/dist/

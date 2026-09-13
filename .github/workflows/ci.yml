@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  push:
+    paths: ["sdk/insight_recorder/sdk/golang/**"]
+  pull_request:
+    paths: ["sdk/insight_recorder/sdk/golang/**"]
+
+defaults:
+  run:
+    working-directory: sdk/insight_recorder/sdk/golang
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Oldest supported release plus current: the SDK must keep working for
+        # customers who are not on the newest toolchain.
+        go: ["1.22", "1.23", "stable"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -d .; exit 1; }
+      - name: vet
+        run: go vet ./...
+      - name: test
+        run: go test -race -cover ./...
+      - name: test zerolog adapter
+        working-directory: sdk/insight_recorder/sdk/golang/zerolog
+        run: go test -race ./...
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: sdk/insight_recorder/sdk/golang
